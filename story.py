@@ -10,6 +10,7 @@ import requests
 import json
 import re
 from pydub import AudioSegment
+from moviepy.editor import *
 
 
 
@@ -145,10 +146,48 @@ def create_audiofile(history_item_id):
 
     print(f"{file_path} saved successfully, duration: {duration} seconds")
     
-    
-    
 
 
+def create_video(durations):
+    audio_folder = "generated_audio"
+    image_folder = "generated_images"
+    output_folder = "generated_video"
+
+    # Ensure the output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Get sorted lists of audio and image files
+    audio_files = sorted([f for f in os.listdir(audio_folder) if f.endswith('.mp3')])
+    image_files = sorted([f for f in os.listdir(image_folder) if f.endswith('.png')])
+
+    clips = []
+
+    for audio_file, image_file, duration in zip(audio_files, image_files, durations):
+        # Load the audio clip
+        audio_clip = AudioFileClip(os.path.join(audio_folder, audio_file))
+        
+        # Debug: Print audio file path and duration
+        print(f"Processing audio: {audio_file}, Duration: {duration}")
+
+        # Load the image and create a video clip with the duration of the audio
+        image_clip = ImageClip(os.path.join(image_folder, image_file)).set_duration(duration)
+        
+        # Debug: Print image file path
+        print(f"Processing image: {image_file}")
+
+        # Combine the image and audio
+        video_clip = image_clip.set_audio(audio_clip)
+        clips.append(video_clip)
+
+    # Concatenate all clips
+    final_clip = concatenate_videoclips(clips)
+
+    # Write the result to a file
+    output_path = os.path.join(output_folder, "final_video.mp4")
+    final_clip.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
+
+    print(f"Video saved as {output_path}")
 
 generated_array = generate_text(topic, num_frames)
 
@@ -158,5 +197,5 @@ for text in generated_array:
     create_audiofile(history_id)
     generate_image(text)
     
-    
-print("The durations array is ", durations)
+# Usage
+create_video(durations)
