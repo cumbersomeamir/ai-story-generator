@@ -251,8 +251,8 @@ def video_story():
     video_file_path = os.path.join("generated_video", "final_video.mp4")
 
     # Send the video file in the response
-    return send_file(video_file_path, as_attachment=True, attachment_filename="final_video.mp4")
+    return send_file(video_file_path, as_attachment=True, download_name="final_video.mp4")
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host= '0.0.0.0', port=7004)
+    app.run(debug=True, host='0.0.0.0', port=7004)
