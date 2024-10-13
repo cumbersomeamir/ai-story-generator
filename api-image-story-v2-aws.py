@@ -213,7 +213,3 @@ def image_story():
 # Flask app runs as usual
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=7003)
-
-# Run the Flask app on port 7003
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=7003)
