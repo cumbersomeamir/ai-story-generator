@@ -201,7 +201,7 @@ def create_video(clip_info):
                 break
 
         if video_file is None:
-            print(f"No video file found for {unique_id}")
+            print(f"No video file found for {unique_id}, skipping this clip.")
             continue
 
         # Load the audio clip
@@ -228,6 +228,11 @@ def create_video(clip_info):
         video_clip = video_clip.set_duration(audio_clip.duration)
 
         clips.append(video_clip)
+
+    # Check if there are clips to concatenate
+    if not clips:
+        print("No valid video clips to concatenate, exiting.")
+        return None
 
     # Concatenate all clips
     final_clip = concatenate_videoclips(clips, method='compose')
