@@ -156,15 +156,23 @@ def download_video(url, output_folder, unique_id):
     try:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
+        
+        # Adjusting yt-dlp options to download any available format and not fail
         ydl_opts = {
-            'format': 'best',  # Get the best quality available
+            'format': 'mp4',  # Download any available mp4 format
             'outtmpl': os.path.join(output_folder, f'{unique_id}.%(ext)s'),  # Save video with unique_id
+            'ignoreerrors': True,  # Ignore any errors and continue
+            'merge_output_format': 'mp4',  # Ensure output is mp4
         }
+        
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
+        
         print(f"Downloaded video from: {url}")
+    
     except Exception as e:
         print(f"Error downloading video: {str(e)}")
+
 
 def search_and_download(query, max_results=1, output_folder="downloaded_videos", unique_id=None):
     video_urls = youtube_search(query, max_results)
