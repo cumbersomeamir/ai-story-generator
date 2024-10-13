@@ -12,13 +12,7 @@ from pydub import AudioSegment
 from moviepy.editor import *
 import googleapiclient.discovery
 import yt_dlp
-import boto3  # For AWS S3 integration
-
-# AWS credentials and S3 bucket details from environment variables
-aws_access_key = os.getenv("AWS_ACCESS_KEY")
-aws_secret_key = os.getenv("AWS_SECRET_KEY")
-s3_bucket_name = os.getenv("S3_BUCKET_NAME")
-aws_region = os.getenv("AWS_REGION")  # e.g., 'us-east-1'
+import boto3
 
 app = Flask(__name__)
 
@@ -26,29 +20,33 @@ app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 api_key = os.getenv("ELEVENLABS_API_KEY")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
-
-# Initialize AWS S3 client
-s3_client = boto3.client(
-    's3',
-    aws_access_key_id=aws_access_key,
-    aws_secret_access_key=aws_secret_key
-)
+aws_access_key = os.getenv("AWS_ACCESS_KEY")
+aws_secret_key = os.getenv("AWS_SECRET_KEY")
+s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+aws_region = os.getenv("AWS_REGION")
 
 # Initialize OpenAI client
 client = openai.OpenAI()
 
+# S3 client initialization
+s3_client = boto3.client(
+    's3',
+    aws_access_key_id=aws_access_key,
+    aws_secret_access_key=aws_secret_key,
+    region_name=aws_region
+)
+
 
 def upload_to_s3(file_path, unique_id):
-    """Uploads a file to S3 and returns the URL."""
-    s3_file_key = f"videos/{unique_id}.mp4"
+    s3_key = f"videos/{unique_id}.mp4"
     try:
-        s3_client.upload_file(file_path, S3_BUCKET_NAME, s3_file_key)
-        video_url = f"https://{S3_BUCKET_NAME}.s3.amazonaws.com/{s3_file_key}"
-        return video_url
+        s3_client.upload_file(file_path, s3_bucket_name, s3_key)
+        s3_url = f"https://{s3_bucket_name}.s3.{aws_region}.amazonaws.com/{s3_key}"
+        return s3_url
     except Exception as e:
         print(f"Error uploading to S3: {str(e)}")
         return None
-      
+        
 def generate_text(topic, num_frames):
     completion = client.chat.completions.create(
       model="gpt-4o",
@@ -201,7 +199,7 @@ def create_video(clip_info):
                 break
 
         if video_file is None:
-            print(f"No video file found for {unique_id}, skipping this clip.")
+            print(f"No video file found for {unique_id}")
             continue
 
         # Load the audio clip
@@ -220,6 +218,7 @@ def create_video(clip_info):
             # Freeze the last frame
             last_frame = video_clip.to_ImageClip(duration=time_to_add)
             video_clip = concatenate_videoclips([video_clip, last_frame])
+        # Else, durations are equal, do nothing
 
         # Set the audio of the video clip to be the audio clip
         video_clip = video_clip.set_audio(audio_clip)
@@ -229,24 +228,15 @@ def create_video(clip_info):
 
         clips.append(video_clip)
 
-    # Check if there are clips to concatenate
-    if not clips:
-        print("No valid video clips to concatenate, exiting.")
-        return None
-
     # Concatenate all clips
     final_clip = concatenate_videoclips(clips, method='compose')
 
     # Write the result to a file
-    unique_id = str(uuid.uuid4())
-    output_path = os.path.join(output_folder, f"{unique_id}.mp4")
+    output_path = os.path.join(output_folder, "final_video.mp4")
     final_clip.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
 
     print(f"Video saved as {output_path}")
-    
-    # Upload the video to S3
-    video_url = upload_to_s3(output_path, unique_id)
-    return video_url
+
 
 @app.route('/video-story', methods=['POST'])
 def video_story():
@@ -278,14 +268,20 @@ def video_story():
             'duration': duration
         })
 
-    # Create the video and get the S3 URL
-    video_url = create_video(clip_info)
+    # Create the video
+    create_video(clip_info)
 
-    if video_url:
-        return jsonify({'video_url': video_url})
+    # Path to the generated video
+    video_file_path = os.path.join("generated_video", "final_video.mp4")
+    
+    # Upload the video to S3 and get the URL
+    s3_url = upload_to_s3(video_file_path, "final_video")
+
+    if s3_url:
+        # Return the S3 URL in the response
+        return jsonify({'video_url': s3_url}), 200
     else:
-        return jsonify({'error': 'Failed to create video'}), 500
-
-
+        return jsonify({'error': 'Failed to upload video to S3'}), 500
+        
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=7004)
