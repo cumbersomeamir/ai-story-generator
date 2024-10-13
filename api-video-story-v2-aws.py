@@ -12,7 +12,7 @@ from pydub import AudioSegment
 from moviepy.editor import *
 import googleapiclient.discovery
 import yt_dlp
-from botocore.exceptions import NoCredentialsError
+import boto3  # For AWS S3 integration
 
 # AWS credentials and S3 bucket details from environment variables
 aws_access_key = os.getenv("AWS_ACCESS_KEY")
