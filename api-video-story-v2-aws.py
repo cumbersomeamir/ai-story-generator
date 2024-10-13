@@ -30,8 +30,8 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 # Initialize AWS S3 client
 s3_client = boto3.client(
     's3',
-    aws_access_key_id=AWS_ACCESS_KEY,
-    aws_secret_access_key=AWS_SECRET_KEY
+    aws_access_key_id=aws_access_key,
+    aws_secret_access_key=aws_secret_key
 )
 
 # Initialize OpenAI client
