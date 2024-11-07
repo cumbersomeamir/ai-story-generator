@@ -303,3 +303,8 @@ def video_story():
         
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=7004)
+
+#Add captions to the final video
+#Videos containing text should be removed
+#Not specifying quality and video type can result in empty repsonses but long responses will take time to download tradeoff
+
