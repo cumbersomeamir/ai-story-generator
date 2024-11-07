@@ -307,4 +307,5 @@ if __name__ == '__main__':
 #Add captions to the final video
 #Videos containing text should be removed
 #Not specifying quality and video type can result in empty repsonses but long responses will take time to download tradeoff
+#Adding b roll as string in query can have better results but limitations are not fully known
 
