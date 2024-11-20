@@ -157,7 +157,6 @@ def create_video(durations):
     final_clip.write_videofile(output_path, fps=24, codec='libx264', audio_codec='aac')
 
     print(f"Video saved as {output_path}")
-    cleanup_folders([audio_folder, image_folder])
     return output_path
 
 # Function to clean up folders after processing
@@ -191,7 +190,10 @@ def image_story():
         return jsonify({"error": "'num_frames' must be an integer"}), 400
 
     durations = []
+    cleanup_folders(["generated_audio", "generated_images", "generated_video"])
+
     generated_array = generate_text(topic, num_frames)
+    
     
     for text in generated_array:
         submit_text(text)
